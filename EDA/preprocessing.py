@@ -11,7 +11,10 @@ steady_length = 1024
 
 # Initialize lists to hold signals and labels
 signals = []
+# Bluetooth, UAV, or WiFi
 labels = []
+# Specific Device Signatures
+devices = []
 
 def load_file(filepath):
     with h5py.File(filepath, 'r') as f:
@@ -36,18 +39,19 @@ def iterate_directory(dir_path):
             continue
 
         if os.path.isfile(full_path):
-            print(f"File: {full_path}")
+            print(f"Processing File: {full_path}")
 
             signal = load_file(full_path)
             start, end = detect_steady_region(signal)
             segment = signal[start:end]
             signals.append(segment)
 
-            label = os.path.normpath(full_path).split(os.sep)[5]
-            labels.append(label)
+            label = os.path.normpath(full_path).split(os.sep)
+            labels.append(label[5])
+            devices.append(label[6])
 
         elif os.path.isdir(full_path):
-            print(f"Directory: {full_path}")
+            print(f"Processing New Directory: {full_path}")
             iterate_directory(full_path) 
 
 directory_path = r"D:\CARDRF\CARDRF\LOS"
@@ -55,5 +59,8 @@ iterate_directory(directory_path)
 
 signal_out = np.array(signals, dtype=np.float32)
 label_out = np.array(labels, dtype=object)
+device_out = np.array(devices, dtype=object)
+
 np.save("cardrf_signals.npy", signal_out)
 np.save("cardrf_labels.npy", label_out)
+np.save("cardrf_devices.npy", device_out)
