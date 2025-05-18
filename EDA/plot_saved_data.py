@@ -2,15 +2,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Load saved files
-X = np.load("cardrf_signals.npy")         # shape: (N, 1024)
-y = np.load("cardrf_labels.npy", allow_pickle=True)  # shape: (N,)
+X = np.load("cardrf_signals.npy")
+y = np.load("cardrf_labels.npy", allow_pickle=True)  
 
-print(len(X))
-print(y.shape)
+print(f"X Shape: {len(X)}")
+print(f"Y Shape: {y.shape}")
 
 # Extract the signal and label
-signal = X[5801]
-label = y[5801]
+signal = X[100]
+label = y[100]
 
 # Plot
 plt.figure(figsize=(10, 4))
