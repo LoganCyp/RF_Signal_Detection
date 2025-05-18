@@ -1,7 +1,32 @@
 import os
+import h5py
+import numpy as np
 
-# For now we will exclude the UAV Controllers from the data
+# Exclude the UAV Controllers from the data
 exclude_path = [r"D:\CARDRF\CARDRF\LOS\Train\UAV_Controller", r"D:\CARDRF\CARDRF\LOS\Test\UAV_Controller"]
+
+# Scale factor and segment length
+scale_factor = 6.581e-6 
+steady_length = 1024
+
+# Initialize lists to hold signals and labels
+signals = []
+labels = []
+
+def load_file(filepath):
+    with h5py.File(filepath, 'r') as f:
+        signal = np.array(f['Channel_1']['Data']).squeeze()
+        return signal[3000000:3200000] * scale_factor
+    
+def detect_steady_region(signal, window=100, threshold_ratio=0.5):
+    energy = np.convolve(signal**2, np.ones(window), mode='valid')
+    threshold = np.max(energy) * threshold_ratio
+    candidates = np.where(energy > threshold)[0]
+    if len(candidates) == 0:
+        return 0, steady_length
+    start = candidates[0]
+    end = min(start + steady_length, len(signal))
+    return start, end
 
 def iterate_directory(dir_path):
     for filename in os.listdir(dir_path):
@@ -13,9 +38,22 @@ def iterate_directory(dir_path):
         if os.path.isfile(full_path):
             print(f"File: {full_path}")
 
+            signal = load_file(full_path)
+            start, end = detect_steady_region(signal)
+            segment = signal[start:end]
+            signals.append(segment)
+
+            label = os.path.normpath(full_path).split(os.sep)[5]
+            labels.append(label)
+
         elif os.path.isdir(full_path):
             print(f"Directory: {full_path}")
             iterate_directory(full_path) 
 
 directory_path = r"D:\CARDRF\CARDRF\LOS"
 iterate_directory(directory_path)
+
+signal_out = np.array(signals, dtype=np.float32)
+label_out = np.array(labels, dtype=object)
+np.save("cardrf_signals.npy", signal_out)
+np.save("cardrf_labels.npy", label_out)
